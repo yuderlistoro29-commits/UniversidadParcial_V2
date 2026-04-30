@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudiantes</title>
+    <link rel="stylesheet" href="/static/styles.css?v=2">
+</head>
+<body class="auth-locked">
+
+    <!-- Modal: sesión expirada / acceso denegado -->
+    <div id="session-modal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-icon">⚠️</div>
+            <h2>Sesión no válida</h2>
+            <p>Tu sesión expiró o no tienes autorización. Serás redirigido al login.</p>
+            <button class="btn-primary" onclick="goToLogin()">Ir al login</button>
+        </div>
+    </div>
+
+    <main class="page-shell">
+        <section class="card">
+            <div class="topbar">
+                <div class="title">
+                    <h1>Gestión de estudiantes</h1>
+                    <span>Panel protegido por sesión OTP</span>
+                </div>
+                <button class="btn-secondary" onclick="logout()">Cerrar sesión</button>
+            </div>
+
+            <div class="grid two" style="margin-bottom: 22px;">
+                <div>
+                    <label for="name">Nombre</label>
+                    <input type="text" id="name" placeholder="Nombre">
+                </div>
+                <div>
+                    <label for="lastname">Apellido</label>
+                    <input type="text" id="lastname" placeholder="Apellido">
+                </div>
+                <div>
+                    <label for="age">Edad</label>
+                    <input type="number" id="age" placeholder="Edad" min="1">
+                </div>
+                <div>
+                    <label for="grade">Nota</label>
+                    <input type="number" id="grade" placeholder="0.0" step="0.1" min="0" max="5">
+                </div>
+            </div>
+
+            <input type="hidden" id="student-id">
+            <div class="actions" style="margin-bottom: 24px;">
+                <button class="btn-primary" id="submit-btn" onclick="saveStudent()">Guardar</button>
+                <button class="btn-secondary" onclick="clearForm()">Limpiar</button>
+            </div>
+
+            <div class="header">
+                <h2>Lista de estudiantes</h2>
+                <p>Las acciones se bloquean si la sesión no es válida.</p>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Edad</th>
+                            <th>Nota</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-list"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="/static/students.js?v=2"></script>
+</body>
+</html>
