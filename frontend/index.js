@@ -1,6 +1,17 @@
+/* =====================================================
+   CONFIGURACIÓN Y VARIABLES GLOBALES
+   ===================================================== */
 const API_URL = "/api";
-
 let currentEmail = "";
+
+/* =====================================================
+   INICIALIZACIÓN
+   ===================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+    checkUnauthParam();
+    validateExistingSession();
+    initOTPBoxes();
+});
 
 window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
@@ -8,18 +19,89 @@ window.addEventListener('pageshow', (event) => {
     }
 });
 
-// Muestra modal si viene redirigido por acceso no autorizado
-function checkUnauthParam() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("unauth") === "1") {
-        document.getElementById("unauth-modal").style.display = "flex";
-        // Limpia el param de la URL sin recargar
-        history.replaceState(null, "", "/");
+/* ── Lógica de los 6 cuadros de OTP ── */
+function initOTPBoxes() {
+    const boxes = Array.from({ length: 6 }, (_, i) => document.getElementById("b" + i));
+
+    boxes.forEach((box, i) => {
+        if (!box) return;
+
+        box.addEventListener("input", (e) => {
+            // Solo números y un solo dígito
+            box.value = e.target.value.replace(/\D/g, "")[0] || "";
+            // Salto al siguiente cuadro
+            if (box.value && i < 5) boxes[i + 1].focus();
+            updateOTPState(boxes);
+        });
+
+        box.addEventListener("keydown", (e) => {
+            // Retroceder con Borrar
+            if (e.key === "Backspace" && !box.value && i > 0) {
+                boxes[i - 1].focus();
+                boxes[i - 1].value = "";
+                updateOTPState(boxes);
+            }
+        });
+
+        box.addEventListener("paste", (e) => {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData)
+                .getData("text")
+                .replace(/\D/g, "");
+            paste.split("").slice(0, 6).forEach((ch, j) => {
+                if (boxes[j]) boxes[j].value = ch;
+            });
+            const nextFocus = Math.min(paste.length, 5);
+            if (boxes[nextFocus]) boxes[nextFocus].focus();
+            updateOTPState(boxes);
+        });
+    });
+}
+
+function updateOTPState(boxes) {
+    boxes.forEach((b) => b.classList.toggle("filled", !!b.value));
+    const complete = boxes.map((b) => b.value).join("").length === 6;
+    const verifyBtn = document.getElementById("verify-btn");
+    if (verifyBtn) verifyBtn.disabled = !complete;
+    
+    // Limpiar mensajes al escribir
+    const msg = document.getElementById("message");
+    if (msg) {
+        msg.textContent = "";
+        msg.className = "notice";
     }
 }
 
-function closeUnauthModal() {
-    document.getElementById("unauth-modal").style.display = "none";
+function getOTPCode() {
+    return Array.from({ length: 6 }, (_, i) => document.getElementById("b" + i).value).join("");
+}
+
+function clearOTPBoxes() {
+    Array.from({ length: 6 }, (_, i) => {
+        const b = document.getElementById("b" + i);
+        if (b) {
+            b.value = "";
+            b.classList.remove("filled");
+        }
+    });
+    const verifyBtn = document.getElementById("verify-btn");
+    if (verifyBtn) verifyBtn.disabled = true;
+}
+
+/* =====================================================
+   NAVEGACIÓN Y SESIÓN
+   ===================================================== */
+function showEmailForm() {
+    document.getElementById("hero-section").style.display = "none";
+    document.getElementById("otp-section").style.display = "none";
+    document.getElementById("email-section").style.display = "grid";
+}
+
+function backToLanding() {
+    document.getElementById("email-section").style.display = "none";
+    document.getElementById("otp-section").style.display = "none";
+    document.getElementById("hero-section").style.display = "grid";
+    document.getElementById("email").value = "";
 }
 
 async function validateExistingSession() {
@@ -35,23 +117,34 @@ async function validateExistingSession() {
             window.location.replace("/students");
             return;
         }
-    } catch (_) {
-        // ignore
-    }
+    } catch (_) { /* ignore */ }
 
     sessionStorage.clear();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    checkUnauthParam();
-    validateExistingSession();
-});
+function checkUnauthParam() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("unauth") === "1") {
+        const modal = document.getElementById("unauth-modal");
+        if (modal) modal.style.display = "flex";
+        history.replaceState(null, "", "/");
+    }
+}
 
+function closeUnauthModal() {
+    const modal = document.getElementById("unauth-modal");
+    if (modal) modal.style.display = "none";
+}
+
+/* =====================================================
+   FLUJO DE AUTENTICACIÓN (API)
+   ===================================================== */
 async function requestOTP(isResend = false) {
-    const email = document.getElementById('email').value.trim();
+    const emailInput = document.getElementById('email');
+    const email = emailInput.value.trim();
 
     if (!email) {
-        showMessage('Por favor ingresa tu correo', 'error');
+        showMessage('Por favor ingresa tu correo', 'error', true);
         return;
     }
 
@@ -63,27 +156,34 @@ async function requestOTP(isResend = false) {
         });
 
         const data = await response.json();
-
         if (!response.ok) throw new Error(data.detail || 'Error enviando OTP');
 
         currentEmail = email;
+        
+        // Actualizar UI
+        const displayEmail = document.getElementById("otp-email-display");
+        if (displayEmail) displayEmail.textContent = email;
+
         document.getElementById('email-section').style.display = 'none';
         document.getElementById('otp-section').style.display = 'grid';
 
+        if (isResend) clearOTPBoxes();
+
         const msg = isResend
-            ? 'Código reenviado. El código anterior ya no es válido.'
-            : 'Código enviado. Revisa tu correo y coloca el código.';
-        showMessage(msg, 'success');
+            ? 'Código reenviado. El anterior ya no es válido.'
+            : 'Código enviado. Revisa tu correo.';
+        showMessage(msg, 'success', false);
+
     } catch (error) {
-        showMessage(error.message, 'error');
+        showMessage(error.message, 'error', true);
     }
 }
 
 async function verifyOTP() {
-    const code = document.getElementById("otp-code").value.trim();
+    const code = getOTPCode();
 
-    if (!code || code.length !== 6) {
-        showMessage("El código debe tener 6 dígitos", "error");
+    if (code.length !== 6) {
+        showMessage("El código debe tener 6 dígitos", "error", false);
         return;
     }
 
@@ -95,19 +195,24 @@ async function verifyOTP() {
         });
 
         const data = await response.json();
-
         if (!response.ok) throw new Error(data.detail || "Código inválido");
 
+        // Guardar sesión y redirigir
         sessionStorage.setItem("token", data.token);
         sessionStorage.setItem("email", currentEmail);
         window.location.replace("/students");
+
     } catch (error) {
-        showMessage(error.message, "error");
+        showMessage(error.message, "error", false);
     }
 }
 
-function showMessage(msg, type) {
-    const el = document.getElementById("message");
-    el.textContent = msg;
-    el.className = `notice ${type}`;
+/* ── Helpers de Mensajes ── */
+function showMessage(msg, type, isEmailScreen) {
+    const targetId = isEmailScreen ? "message-email" : "message";
+    const el = document.getElementById(targetId);
+    if (el) {
+        el.textContent = msg;
+        el.className = `notice ${type}`;
+    }
 }

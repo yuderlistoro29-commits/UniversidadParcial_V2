@@ -1,5 +1,16 @@
+/* =====================================================
+   CONFIGURACIÓN Y VARIABLES GLOBALES
+   ===================================================== */
 const API_URL = "/api/students";
 const AUTH_URL = "/api/auth";
+
+/* =====================================================
+   INICIALIZACIÓN Y SEGURIDAD
+   ===================================================== */
+document.addEventListener("DOMContentLoaded", async () => {
+    const ok = await verifySessionOrRedirect();
+    if (ok) await loadStudents();
+});
 
 window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
@@ -13,15 +24,6 @@ function authHeaders() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
     };
-}
-
-function goToLogin() {
-    sessionStorage.clear();
-    window.location.replace("/?unauth=1");
-}
-
-function showSessionModal() {
-    document.getElementById("session-modal").style.display = "flex";
 }
 
 async function verifySessionOrRedirect() {
@@ -50,10 +52,19 @@ async function verifySessionOrRedirect() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-    const ok = await verifySessionOrRedirect();
-    if (ok) await loadStudents();
-});
+function goToLogin() {
+    sessionStorage.clear();
+    window.location.replace("/?unauth=1");
+}
+
+function showSessionModal() {
+    const modal = document.getElementById("session-modal");
+    if (modal) modal.style.display = "flex";
+}
+
+/* =====================================================
+   OPERACIONES CRUD (API)
+   ===================================================== */
 
 async function loadStudents() {
     try {
@@ -73,34 +84,6 @@ async function loadStudents() {
     }
 }
 
-function renderTable(students) {
-    const tbody = document.getElementById("students-list");
-    tbody.innerHTML = "";
-
-    if (!students.length) {
-        tbody.innerHTML = '<tr><td colspan="6">No hay estudiantes registrados</td></tr>';
-        return;
-    }
-
-    students.forEach((student) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${student.id}</td>
-            <td>${student.name}</td>
-            <td>${student.lastname}</td>
-            <td>${student.age}</td>
-            <td>${student.grade}</td>
-            <td>
-                <div class="actions">
-                    <button class="btn-secondary" onclick='editStudent(${student.id}, ${JSON.stringify(student.name)}, ${JSON.stringify(student.lastname)}, ${student.age}, ${student.grade})'>Editar</button>
-                    <button class="btn-danger" onclick="deleteStudent(${student.id})">Eliminar</button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
 async function saveStudent() {
     const id = document.getElementById("student-id").value;
     const name = document.getElementById("name").value.trim();
@@ -108,6 +91,7 @@ async function saveStudent() {
     const age = Number(document.getElementById("age").value);
     const grade = Number(document.getElementById("grade").value);
 
+    // Validaciones básicas
     if (!name || !lastname || Number.isNaN(age) || Number.isNaN(grade)) {
         alert("Todos los campos son obligatorios");
         return;
@@ -159,6 +143,46 @@ async function deleteStudent(id) {
     }
 }
 
+/* =====================================================
+   INTERFAZ DE USUARIO (UI)
+   ===================================================== */
+
+function renderTable(students) {
+    const tbody = document.getElementById("students-list");
+    tbody.innerHTML = "";
+
+    if (!students.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center; color:#aaa; padding: 24px 14px; font-size:13px;">
+                    No hay estudiantes registrados
+                </td>
+            </tr>`;
+        return;
+    }
+
+    students.forEach((student) => {
+        const pass = student.grade >= 3;
+        const badgeClass = pass ? "grade-badge pass" : "grade-badge fail";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${student.id}</td>
+            <td>${student.name}</td>
+            <td>${student.lastname}</td>
+            <td>${student.age}</td>
+            <td><span class="${badgeClass}">${student.grade.toFixed(1)}</span></td>
+            <td>
+                <div class="actions">
+                    <button class="btn-edit" onclick='editStudent(${student.id}, ${JSON.stringify(student.name)}, ${JSON.stringify(student.lastname)}, ${student.age}, ${student.grade})'>Editar</button>
+                    <button class="btn-delete" onclick="deleteStudent(${student.id})">Eliminar</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
 function editStudent(id, name, lastname, age, grade) {
     document.getElementById("student-id").value = id;
     document.getElementById("name").value = name;
@@ -187,9 +211,7 @@ async function logout() {
                 headers: { Authorization: `Bearer ${token}` },
             });
         }
-    } catch (_) {
-        // ignore
-    }
+    } catch (_) { /* ignore */ }
 
     sessionStorage.clear();
     window.location.replace("/");

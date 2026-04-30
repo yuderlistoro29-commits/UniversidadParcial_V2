@@ -3,78 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estudiantes</title>
-    <link rel="stylesheet" href="/static/styles.css?v=2">
-</head>
-<body class="auth-locked">
+    <title>Gestión de Estudiantes - Panel Administrativo</title>
+    
+    <!-- Tailwind CSS v3 con Plugins -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4526be",
+                        "primary-container": "#5d45d6",
+                        "on-primary-fixed-variant": "#4425bd",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f3f3f5",
+                        "surface-container-high": "#e8e8ea",
+                        "on-surface": "#1a1c1d",
+                        "on-surface-variant": "#484554",
+                        "outline": "#787586",
+                        "outline-variant": "#c9c4d7",
+                        "secondary-container": "#e1ddf6",
+                        "on-secondary-container": "#626076",
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            background-color: #1a1c1d;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-transition {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Estilos para el estado de las notas */
+        .grade-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .grade-badge.pass { background: #d1fae5; color: #065f46; }
+        .grade-badge.fail { background: #fee2e2; color: #991b1b; }
+        
+        /* Avatares */
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            margin-right: 10px;
+        }
 
-    <!-- Modal: sesión expirada / acceso denegado -->
+        /* Modal Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Modal: sesión expirada -->
     <div id="session-modal" class="modal-backdrop" style="display:none;">
-        <div class="modal-box">
-            <div class="modal-icon">⚠️</div>
-            <h2>Sesión no válida</h2>
-            <p>Tu sesión expiró o no tienes autorización. Serás redirigido al login.</p>
-            <button class="btn-primary" onclick="goToLogin()">Ir al login</button>
+        <div class="bg-white p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
+            <div class="text-4xl mb-4">⚠️</div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Sesión no válida</h2>
+            <p class="text-gray-600 mb-6 text-sm">Tu sesión expiró o no tienes autorización. Serás redirigido al login.</p>
+            <button class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-on-primary-fixed-variant btn-transition" onclick="goToLogin()">Ir al login</button>
         </div>
     </div>
 
-    <main class="page-shell">
-        <section class="card">
-            <div class="topbar">
-                <div class="title">
-                    <h1>Gestión de estudiantes</h1>
-                    <span>Panel protegido por sesión OTP</span>
-                </div>
-                <button class="btn-secondary" onclick="logout()">Cerrar sesión</button>
-            </div>
-
-            <div class="grid two" style="margin-bottom: 22px;">
-                <div>
-                    <label for="name">Nombre</label>
-                    <input type="text" id="name" placeholder="Nombre">
+    <main class="w-full max-w-[950px] bg-surface-container-lowest rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden">
+        
+        <!-- Header / Topbar -->
+        <header class="bg-primary-container p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-white/20 p-3 rounded-xl shadow-inner">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
                 </div>
                 <div>
-                    <label for="lastname">Apellido</label>
-                    <input type="text" id="lastname" placeholder="Apellido">
-                </div>
-                <div>
-                    <label for="age">Edad</label>
-                    <input type="number" id="age" placeholder="Edad" min="1">
-                </div>
-                <div>
-                    <label for="grade">Nota</label>
-                    <input type="number" id="grade" placeholder="0.0" step="0.1" min="0" max="5">
+                    <h1 class="text-xl font-bold tracking-tight">Gestión de estudiantes</h1>
+                    <p class="text-[10px] uppercase tracking-[0.15em] font-semibold opacity-80">Panel de administración académica</p>
                 </div>
             </div>
-
-            <input type="hidden" id="student-id">
-            <div class="actions" style="margin-bottom: 24px;">
-                <button class="btn-primary" id="submit-btn" onclick="saveStudent()">Guardar</button>
-                <button class="btn-secondary" onclick="clearForm()">Limpiar</button>
+            <div class="flex items-center gap-3">
+                <span class="bg-white/10 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border border-white/10">
+                    Sesión OTP activa
+                </span>
+                <button class="px-4 py-1.5 rounded-lg border border-white/30 text-sm font-semibold hover:bg-white/10 btn-transition" onclick="logout()">
+                    Cerrar sesión
+                </button>
             </div>
+        </header>
 
-            <div class="header">
-                <h2>Lista de estudiantes</h2>
-                <p>Las acciones se bloquean si la sesión no es válida.</p>
-            </div>
+        <div class="p-8 space-y-10">
+            <!-- Formulario -->
+            <section>
+                <div class="mb-8">
+                    <h2 class="text-on-surface font-bold text-lg inline-block mr-3">Agregar / editar estudiante</h2>
+                    <span class="text-outline text-xs font-medium">Todos los campos son requeridos</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <input type="hidden" id="student-id">
+                    
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-widest" for="name">Nombre</label>
+                        <input type="text" id="name" class="w-full rounded-xl border-outline-variant bg-surface-container-low focus:border-primary focus:ring-4 focus:ring-primary/10 text-sm py-3 px-4 btn-transition" placeholder="Ej. Carlos">
+                    </div>
 
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Edad</th>
-                            <th>Nota</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="students-list"></tbody>
-                </table>
-            </div>
-        </section>
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-widest" for="lastname">Apellido</label>
+                        <input type="text" id="lastname" class="w-full rounded-xl border-outline-variant bg-surface-container-low focus:border-primary focus:ring-4 focus:ring-primary/10 text-sm py-3 px-4 btn-transition" placeholder="Ej. Martínez">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-widest" for="age">Edad</label>
+                        <input type="number" id="age" class="w-full rounded-xl border-outline-variant bg-surface-container-low focus:border-primary focus:ring-4 focus:ring-primary/10 text-sm py-3 px-4 btn-transition" placeholder="18">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-widest" for="grade">Nota</label>
+                        <input type="number" id="grade" step="0.1" min="0" max="5" class="w-full rounded-xl border-outline-variant bg-surface-container-low focus:border-primary focus:ring-4 focus:ring-primary/10 text-sm py-3 px-4 btn-transition" placeholder="0.0 - 5.0">
+                    </div>
+
+                    <div class="md:col-span-2 flex gap-4 mt-4">
+                        <button id="submit-btn" onclick="saveStudent()" class="bg-primary hover:bg-on-primary-fixed-variant text-white px-10 py-3 rounded-xl text-sm font-bold btn-transition shadow-lg shadow-primary/25 active:scale-95">
+                            Guardar
+                        </button>
+                        <button onclick="clearForm()" class="bg-surface-container-high hover:bg-surface-variant text-on-surface-variant px-10 py-3 rounded-xl text-sm font-bold btn-transition active:scale-95">
+                            Limpiar
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="border-surface-container-high">
+
+            <!-- Tabla de Lista -->
+            <section>
+                <div class="mb-6 flex items-baseline gap-3">
+                    <h2 class="text-on-surface font-bold text-lg">Lista de estudiantes</h2>
+                    <span class="text-outline text-[11px] italic">Las acciones se bloquean si la sesión no es válida.</span>
+                </div>
+
+                <div class="overflow-hidden rounded-2xl border border-surface-container-high shadow-sm bg-white">
+                    <table class="w-full text-left">
+                        <thead class="bg-secondary-container text-on-secondary-container text-[11px] font-bold uppercase tracking-[0.1em]">
+                            <tr>
+                                <th class="px-6 py-4">ID</th>
+                                <th class="px-6 py-4">Nombre Completo</th>
+                                <th class="px-6 py-4">Edad</th>
+                                <th class="px-6 py-4">Nota</th>
+                                <th class="px-6 py-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-list" class="divide-y divide-surface-container-low text-sm text-on-surface-variant">
+                            <!-- JS renderiza aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </main>
+
     <script src="/static/students.js?v=2"></script>
+    <script>
+        // Redefinición de la función render para adaptarla al nuevo diseño de filas
+        function renderTable(students) {
+            const tbody = document.getElementById("students-list");
+            tbody.innerHTML = "";
+
+            if (!students.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center italic text-outline">
+                            <div class="flex flex-col items-center gap-2">
+                                <svg class="h-8 w-8 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                                </svg>
+                                No hay estudiantes registrados actualmente.
+                            </div>
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            const avatarColors = [
+                { bg: "#e0e7ff", color: "#3730a3" },
+                { bg: "#fce7f3", color: "#9d174d" },
+                { bg: "#d1fae5", color: "#065f46" },
+                { bg: "#fef3c7", color: "#92400e" }
+            ];
+
+            students.forEach((student, i) => {
+                const pass = student.grade >= 3;
+                const badgeClass = pass ? "grade-badge pass" : "grade-badge fail";
+                const initials = (student.name[0] + student.lastname[0]).toUpperCase();
+                const ac = avatarColors[i % avatarColors.length];
+
+                const row = document.createElement("tr");
+                row.className = "hover:bg-surface-container-low/50 btn-transition";
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-xs text-outline">#${String(student.id).padStart(3, '0')}</td>
+                    <td class="px-6 py-4 text-on-surface font-medium">
+                        <div class="flex items-center">
+                            <span class="avatar" style="background:${ac.bg};color:${ac.color}">${initials}</span>
+                            ${student.name} ${student.lastname}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">${student.age} años</td>
+                    <td class="px-6 py-4">
+                        <span class="${badgeClass}">${student.grade.toFixed(1)}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center gap-2">
+                            <button onclick='editStudent(${student.id}, ${JSON.stringify(student.name)}, ${JSON.stringify(student.lastname)}, ${student.age}, ${student.grade})' 
+                                    class="text-primary hover:bg-primary/10 p-2 rounded-lg btn-transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                            </button>
+                            <button onclick="deleteStudent(${student.id})" 
+                                    class="text-red-500 hover:bg-red-50 p-2 rounded-lg btn-transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
 </body>
 </html>
