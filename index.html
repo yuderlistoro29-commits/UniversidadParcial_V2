@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Estudiantes</title>
+    <link rel="stylesheet" href="/static/styles.css?v=2">
+</head>
+<body>
+    <!-- Modal: acceso sin autorización -->
+    <div id="unauth-modal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-icon">🔒</div>
+            <h2>Acceso restringido</h2>
+            <p>Debes iniciar sesión para acceder a esa página.</p>
+            <button class="btn-primary" onclick="closeUnauthModal()">Entendido</button>
+        </div>
+    </div>
+
+    <main class="page-shell">
+        <section class="card narrow">
+            <div class="header">
+                <span class="badge">Autenticación OTP</span>
+                <h1>Sistema de estudiantes</h1>
+                <p>Ingresa tu correo, recibe el código y entra al panel.</p>
+            </div>
+
+            <div id="email-section" class="grid">
+                <div>
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email">
+                </div>
+                <div class="actions">
+                    <button class="btn-primary" onclick="requestOTP()">Enviar código</button>
+                </div>
+            </div>
+
+            <div id="otp-section" class="grid" style="display:none; margin-top: 16px;">
+                <div>
+                    <label for="otp-code">Código OTP</label>
+                    <input type="text" id="otp-code" placeholder="123456" maxlength="6" inputmode="numeric">
+                    <div class="helper">Revisa el correo o la consola del servidor si no configuraste Gmail.</div>
+                </div>
+                <div class="actions">
+                    <button class="btn-primary" onclick="verifyOTP()">Verificar</button>
+                    <button class="btn-secondary" onclick="requestOTP(true)">Reenviar</button>
+                </div>
+            </div>
+
+            <p id="message" class="notice"></p>
+        </section>
+    </main>
+    <script src="/static/index.js?v=2"></script>
+</body>
+</html>
